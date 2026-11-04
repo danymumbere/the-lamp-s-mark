@@ -1,0 +1,30 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
+<title>Admin – The Lamb's Mark</title><link rel="stylesheet" href="/style.css"></head><body><div class="wrap">
+<h2>Administration</h2>
+<form id="lg"><label>Mot de passe<input type="password" id="pw" required></label><p><button>Se connecter</button></p></form>
+<div id="app" hidden>
+<h3>Ajouter / modifier un projet</h3>
+<form id="pf"><input type="hidden" id="id"><label>Lien du site<div class="row"><input id="url" type="url" required style="flex:1"><button type="button" id="og">Charger Open Graph</button></div></label>
+<label>Titre<input id="title"></label><label>Description<textarea id="desc" rows="3"></textarea></label>
+<label>Image (URL, ou fichier ci-dessous pour remplacer)<input id="img"></label><input type="file" id="file" accept="image/*">
+<p><img id="pv" alt="" style="max-width:240px;display:none"></p><label>Objectif de dons en USD (0 = aucun)<input id="goal" type="number" min="0" value="0"></label>
+<p class="row"><button>Enregistrer</button><button type="button" class="alt" onclick="pf.reset();id.value=pv.style.display='none'">Annuler</button></p><p id="m" role="status"></p></form>
+<h3>Projets et clics</h3><table id="pt"></table>
+<h3>Dons</h3><table id="dt"></table></div></div>
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const api=(u,o)=>fetch('/api'+u,o).then(async r=>{const j=await r.json();if(r.status==401&&u!='/login')location.reload();if(!r.ok)throw j.error;return j});
+let data,PR=[];
+async function load(){PR=await api('/admin/projects');$('#lg').hidden=true;$('#app').hidden=false;
+ $('#pt').innerHTML='<tr><th>Projet</th><th>Clics</th><th></th></tr>'+PR.map(p=>`<tr><td>${esc(p.title)}<br><small>${esc(p.url)}</small></td><td><b>${p.clicks}</b></td><td><button class="alt" data-e="${p.id}">Modifier</button> <button class="alt" data-d="${p.id}">Supprimer</button></td></tr>`).join('');
+ const D=await api('/admin/donations');$('#dt').innerHTML='<tr><th>Date</th><th>Projet</th><th>Donateur</th><th>$</th><th>Réf.</th><th>Statut</th></tr>'+D.map(d=>`<tr><td>${d.created.slice(0,10)}</td><td>${esc(d.project)}</td><td>${esc(d.name)}<br><small>${esc(d.phone)}</small></td><td>${d.amount}</td><td>${esc(d.ref)}</td><td>${d.status}<br>${['confirmed','rejected'].map(s=>d.status==s?'':`<button class="alt" data-s="${s}" data-i="${d.id}">${s=='confirmed'?'Confirmer':'Rejeter'}</button>`).join(' ')}</td></tr>`).join('')}
+$('#lg').onsubmit=async e=>{e.preventDefault();try{await api('/login',{method:'POST',body:JSON.stringify({password:pw.value})});load()}catch(x){alert(x)}};
+$('#og').onclick=async()=>{m.textContent='Chargement…';try{const o=await api('/og?url='+encodeURIComponent(url.value));title.value=o.title;desc.value=o.description;img.value=o.image;pv.src=o.image;pv.style.display=o.image?'':'none';m.textContent='Informations chargées : modifiez-les si besoin.'}catch(x){m.textContent=x}};
+$('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;const i=new Image();i.onload=()=>{const k=Math.min(1,900/i.width),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);data=c.toDataURL('image/jpeg',.8);pv.src=data;pv.style.display=''};i.src=URL.createObjectURL(f)};
+$('#pf').onsubmit=async e=>{e.preventDefault();try{await api('/admin/projects',{method:'POST',body:JSON.stringify({id:id.value||null,url:url.value,title:title.value,description:desc.value,image:img.value,imageData:data,goal:goal.value})});data=null;pf.reset();id.value='';pv.style.display='none';m.textContent='Enregistré.';load()}catch(x){m.textContent=x}};
+document.onclick=async e=>{const t=e.target.dataset;
+ if(t.e){const p=PR.find(x=>x.id==t.e);id.value=p.id;url.value=p.url;title.value=p.title;desc.value=p.description;img.value=p.image;goal.value=p.goal;pv.src=p.image;pv.style.display=p.image?'':'none';scrollTo(0,0)}
+ if(t.d&&confirm('Supprimer ce projet ?')){await api('/admin/projects/'+t.d,{method:'DELETE'});load()}
+ if(t.s){await api('/admin/donations/'+t.i,{method:'POST',body:JSON.stringify({status:t.s})});load()}};
+api('/admin/projects').then(load).catch(()=>{});
+</script></body></html>
