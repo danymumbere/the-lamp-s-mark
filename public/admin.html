@@ -13,7 +13,7 @@
 <h3>Dons</h3><table id="dt"></table></div></div>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const api=(u,o)=>fetch('/api'+u,o).then(async r=>{const j=await r.json();if(r.status==401&&u!='/login')location.reload();if(!r.ok)throw j.error;return j});
+const api=(u,o)=>fetch('/api'+u,o).then(async r=>{const j=await r.json();if(r.status==401&&u!='/login'&&!$('#app').hidden)location.reload();if(!r.ok)throw j.error;return j});
 let data,PR=[];
 async function load(){PR=await api('/admin/projects');$('#lg').hidden=true;$('#app').hidden=false;
  $('#pt').innerHTML='<tr><th>Projet</th><th>Clics</th><th></th></tr>'+PR.map(p=>`<tr><td>${esc(p.title)}<br><small>${esc(p.url)}</small></td><td><b>${p.clicks}</b></td><td><button class="alt" data-e="${p.id}">Modifier</button> <button class="alt" data-d="${p.id}">Supprimer</button></td></tr>`).join('');
