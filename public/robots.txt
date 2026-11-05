@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /admin.html
 Disallow: /go/
-Sitemap: https://thelambsmark.pages.dev/sitemap.xml
+Sitemap: https://23d4d6f2.thelampsmark.pages.dev/sitemap.xml
