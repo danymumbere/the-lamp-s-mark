@@ -14,7 +14,8 @@ async function og(url){
   return{title:(meta('og:title')||dec((h.match(/<title[^>]*>([^<]*)/i)||[])[1]||'')).trim(),
     description:meta('og:description')||meta('description'),image};
 }
-export async function onRequest({request:req,env,params}){
+export async function onRequest(ctx){try{return await handle(ctx)}catch(e){return J({error:'Serveur : '+e.message},500)}}
+async function handle({request:req,env,params}){
   const p='/'+[].concat(params.path||[]).join('/'),m=req.method,db=env.DB;
   const body=()=>req.json().catch(()=>({}));let x;
   if(p==='/login'&&m==='POST'){
